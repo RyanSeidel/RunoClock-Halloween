@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Printable QR Codes</title>
+  <style>
+    /* Self-contained so prints are plain black on white regardless of theme. */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #e9e9e9;
+      color: #000;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    .toolbar {
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 1rem;
+      font-size: 1rem;
+    }
+    .toolbar button {
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.2rem;
+      padding: 0.7rem 1.6rem;
+      border: 3px solid #000;
+      border-radius: 0.6rem;
+      background: #ffe600;
+      cursor: pointer;
+    }
+    .warning {
+      background: #fff1c2;
+      border: 3px solid #9a4b00;
+      border-radius: 0.6rem;
+      padding: 0.7rem 1rem;
+      font-weight: 700;
+    }
+    .sheet {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto 1rem;
+      padding: 0.6in 0.5in;
+      background: #fff;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25in;
+    }
+    .sheet h1 { font-size: 34pt; font-weight: 900; line-height: 1.1; margin: 0; }
+    .sheet .sub { font-size: 20pt; font-weight: 700; margin: 0; }
+    .sheet .scan { font-size: 60pt; font-weight: 900; margin: 0; letter-spacing: -0.02em; }
+    .sheet .url { font-size: 9pt; color: #555; margin: 0; word-break: break-all; }
+    .qr { width: 4.75in; height: 4.75in; }
+    .qr img, .qr canvas { width: 4.75in !important; height: 4.75in !important; image-rendering: pixelated; }
+
+    @page { size: letter portrait; margin: 0.4in; }
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .sheet { width: auto; min-height: 0; height: 10in; margin: 0; padding: 0; page-break-after: always; break-after: page; }
+      .sheet:last-child { page-break-after: auto; break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <p><button type="button" onclick="window.print()">Print all 6</button></p>
+    <p>One checkpoint per page, plus a leaderboard sign for the start/finish. Scan each code with your phone before printing to make sure it opens the right page.</p>
+    <p id="warning" class="warning" hidden></p>
+  </div>
+  <div id="sheets"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="config.js"></script>
+  <script>
+    (function () {
+      var CFG = window.HUNT_CONFIG;
+      var base = (CFG.baseUrl || "").trim();
+      if (!base) base = location.href.replace(/[^/]*([?#].*)?$/, "");
+      if (base.slice(-1) !== "/") base += "/";
+
+      var warning = document.getElementById("warning");
+      if (/^https?:\/\/(localhost|127\.|192\.168\.|10\.)/.test(base) || base.indexOf("file:") === 0) {
+        warning.hidden = false;
+        warning.textContent = "Heads up: these codes point to " + base +
+          " — that only works on this computer/network. Set baseUrl in config.js to your GitHub Pages URL before printing for race day.";
+      }
+
+      var sheets = document.getElementById("sheets");
+      var total = CFG.checkpoints.length;
+
+      function addSheet(title, sub, url) {
+        var sheet = document.createElement("section");
+        sheet.className = "sheet";
+        var h1 = document.createElement("h1");
+        h1.textContent = title;
+        var p = document.createElement("p");
+        p.className = "sub";
+        p.textContent = sub;
+        var qr = document.createElement("div");
+        qr.className = "qr";
+        var scan = document.createElement("p");
+        scan.className = "scan";
+        scan.textContent = "Scan me!";
+        var small = document.createElement("p");
+        small.className = "url";
+        small.textContent = url;
+        sheet.append(h1, p, qr, scan, small);
+        sheets.appendChild(sheet);
+        new QRCode(qr, {
+          text: url,
+          width: 1024,
+          height: 1024,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+
+      CFG.checkpoints.forEach(function (cp, i) {
+        addSheet(
+          CFG.eventName + " - Checkpoint " + (i + 1),
+          "Checkpoint " + (i + 1) + " of " + total,
+          base + "index.html?cp=" + encodeURIComponent(cp.code)
+        );
+      });
+      addSheet(CFG.eventName + " - Leaderboard", "See who's in the lead", base + "leaderboard.html");
+    })();
+  </script>
+</body>
+</html>

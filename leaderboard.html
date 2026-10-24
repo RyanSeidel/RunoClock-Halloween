@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>Leaderboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="leaderboard">
+  <header class="topbar"><span data-event-name></span></header>
+  <main class="leaderboard">
+    <h1>Leaderboard</h1>
+    <div class="board-head" aria-hidden="true">
+      <span class="place">#</span><span class="who">Runner</span><span class="found">Found</span><span class="time">Time</span>
+    </div>
+    <div id="board"><p class="empty">Loading…</p></div>
+    <p id="updated" class="updated"></p>
+    <a class="btn btn-secondary" href="index.html">My progress</a>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
