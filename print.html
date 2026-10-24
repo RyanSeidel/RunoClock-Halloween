@@ -67,8 +67,8 @@
 </head>
 <body>
   <div class="toolbar">
-    <p><button type="button" onclick="window.print()">Print all 6</button></p>
-    <p>One checkpoint per page, plus a leaderboard sign for the start/finish. Scan each code with your phone before printing to make sure it opens the right page.</p>
+    <p><button type="button" onclick="window.print()">Print all</button></p>
+    <p>One sign per page: START, the 5 checkpoints, and a leaderboard sign for the start/finish. Scan each code with your phone before printing to make sure it opens the right page.</p>
     <p id="warning" class="warning" hidden></p>
   </div>
   <div id="sheets"></div>
@@ -78,7 +78,9 @@
   <script>
     (function () {
       var CFG = window.HUNT_CONFIG;
-      var base = (CFG.baseUrl || "").trim();
+      // print.html?local points the codes at whatever server is showing this page,
+      // so you can test with your phone on the same Wi-Fi before deploying.
+      var base = new URLSearchParams(location.search).has("local") ? "" : (CFG.baseUrl || "").trim();
       if (!base) base = location.href.replace(/[^/]*([?#].*)?$/, "");
       if (base.slice(-1) !== "/") base += "/";
 
@@ -120,6 +122,9 @@
         });
       }
 
+      if (CFG.startCode) {
+        addSheet(CFG.eventName + " - START", "Scan to start your clock", base + "index.html?cp=" + encodeURIComponent(CFG.startCode));
+      }
       CFG.checkpoints.forEach(function (cp, i) {
         addSheet(
           CFG.eventName + " - Checkpoint " + (i + 1),

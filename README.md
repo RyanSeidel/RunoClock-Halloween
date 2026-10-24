@@ -7,7 +7,7 @@ A phone-friendly QR scavenger hunt for a 2-mile route with 5 checkpoints and a s
 | `config.js` | **The only file you need to edit:** event name, checkpoints, messages, clues, Supabase keys, site URL, theme |
 | `index.html` | The page each QR code opens: name entry, check-in, progress, finish screen |
 | `leaderboard.html` | Live leaderboard that auto-refreshes every 15 seconds |
-| `print.html` | Printable QR signs: 5 checkpoints plus 1 leaderboard sign |
+| `print.html` | Printable QR signs: START, 5 checkpoints, and a leaderboard sign |
 | `app.js`, `style.css` | App logic and styles |
 
 ## How it works
@@ -15,7 +15,8 @@ A phone-friendly QR scavenger hunt for a 2-mile route with 5 checkpoints and a s
 - Each QR code opens `index.html?cp=<code>`. The codes are random 6-character strings, so runners can't guess the URLs.
 - On their first scan, a runner types their name once. The name and a random runner ID are saved on their phone.
 - Each scan records a check-in and shows "Checkpoint X of 5 found!", progress dots, that checkpoint's message, and a clue to the next one. Scanning the same checkpoint again doesn't count twice.
-- After all 5 are found, the runner sees their total time (from first scan to last scan) and a link to the leaderboard.
+- **Timing:** runners scan the START sign at the start line, which starts their clock. A live running clock shows on every checkpoint screen and stops when they find their 5th checkpoint. If someone skips the START sign, their clock starts at their first checkpoint.
+- After all 5 are found, the runner sees their total time and a link to the leaderboard. The leaderboard shows finished times, plus live ticking times for runners still out on the course.
 - **Weak signal:** check-ins are saved on the phone first and then sent to Supabase. If a check-in can't be sent, it stays queued. The app retries on every page load, every 20 seconds, and whenever the phone comes back online. A status line shows "✓ Synced" or "will sync when online". The time of each check-in is the time it was scanned, even if it syncs later.
 
 ---
@@ -32,7 +33,7 @@ create table public.checkins (
   id          uuid primary key default gen_random_uuid(),
   runner_id   text not null check (char_length(runner_id) between 1 and 64),
   runner_name text not null check (char_length(runner_name) between 1 and 40),
-  checkpoint  int  not null check (checkpoint between 1 and 5),
+  checkpoint  int  not null check (checkpoint between 0 and 5),  -- 0 = START scan
   created_at  timestamptz not null default now(),
   constraint checkins_runner_checkpoint_unique unique (runner_id, checkpoint)
 );
@@ -55,6 +56,13 @@ grant select, insert on public.checkins to anon;
 revoke update, delete, truncate on public.checkins from anon;
 ```
 
+   **Already created the table before the START sign existed?** Run this once to allow checkpoint 0:
+
+   ```sql
+   alter table public.checkins drop constraint if exists checkins_checkpoint_check;
+   alter table public.checkins add constraint checkins_checkpoint_check check (checkpoint between 0 and 5);
+   ```
+
 4. **Find your project URL:** open **Project Settings** (the gear icon at the bottom of the sidebar), then **Data API**. Copy the **Project URL**. It looks like `https://abcdefghijklmnop.supabase.co`.
 5. **Find your anon key:** in **Project Settings**, open **API Keys**. Copy the **anon public** key, a long string that starts with `eyJ...`. Newer projects may show a **Publishable key** starting with `sb_publishable_...` instead, and that works too.
    **Never** use the `service_role` or **secret** key. It bypasses all security and must not go on a public website.
@@ -73,6 +81,7 @@ Open `config.js` and edit:
 - `halloweenTheme`: set to `true` for orange and black, or `false` for the bright classic look.
 - `checkpoints`: the 5 checkpoints in route order. Each one has:
   - `code`: the random code in the QR URL. Five codes are already generated. If you change one, reprint that sign.
+- `startCode`: the code for the START sign, also already generated. Set it to `""` if you don't want a start sign.
   - `name`: a fun display name.
   - `message`: a short message or mini challenge shown when the checkpoint is scanned.
   - `clue`: a hint about where the **next** checkpoint is. **Replace the sample clues with hints about your real landmarks.**
@@ -111,7 +120,7 @@ Do this a few days before October 28.
 
 1. Open `https://ryanseidel.github.io/RunoClock-Halloween/print.html` in a desktop browser. If you open it from localhost, the codes will point to `baseUrl` in config.js, which is fine, but double-check that it's your live URL.
 2. Scan each code on screen with your phone to confirm it opens the right checkpoint.
-3. Click **Print all 6**. Use Letter paper, portrait orientation, "Default" margins, and 100% scale (turn off "Fit to page"). You'll get one page per checkpoint, with QR codes about 4¾ inches wide, plus a sixth page for the start/finish area that links to the leaderboard.
+3. Click **Print all**. Use Letter paper, portrait orientation, "Default" margins, and 100% scale (turn off "Fit to page"). You'll get 7 pages, each with a QR code about 4¾ inches wide: the START sign for the start line, the 5 checkpoints, and a leaderboard sign for the start/finish area.
 4. Weatherproof the signs if you can: use sheet protectors or laminate them. Avoid glossy plastic directly over the code in direct sun, because glare makes scanning harder. Mount them at chest height.
 
 ## Notes and limits

@@ -18,6 +18,12 @@ window.HUNT_CONFIG = {
   // true = spooky orange-and-black look, false = bright classic look.
   halloweenTheme: true,
 
+  // Code for the START sign at the start line (index.html?cp=<startCode>).
+  // Scanning it starts the runner's clock. Runners who skip it start their clock
+  // at their first checkpoint. Set to "" to drop the start sign entirely.
+  startCode: "tjpg7u",
+  startMessage: "Your clock is running! Go find Checkpoint 1.",
+
   // How often the leaderboard reloads, and how often unsent check-ins retry.
   leaderboardRefreshSeconds: 15,
   syncRetrySeconds: 20,

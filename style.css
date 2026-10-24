@@ -135,7 +135,7 @@ p { margin: 0 0 1em; }
 .card p:last-child { margin-bottom: 0; }
 .card-clue { border-style: dashed; }
 .card-time { text-align: center; }
-.finish-time { font-size: clamp(3rem, 16vw, 5rem); font-weight: 900; margin: 0; font-variant-numeric: tabular-nums; }
+.big-time { font-size: clamp(3rem, 16vw, 5rem); font-weight: 900; margin: 0; font-variant-numeric: tabular-nums; }
 
 /* ---------- buttons & form */
 
@@ -228,6 +228,7 @@ p { margin: 0 0 1em; }
 .who { overflow-wrap: anywhere; }
 .found, .time { text-align: right; font-variant-numeric: tabular-nums; }
 .board .found { font-weight: 900; }
+.board .running { color: var(--muted); font-weight: 600; font-style: italic; }
 .done .found { color: var(--accent); }
 .you {
   font-size: 0.75rem;

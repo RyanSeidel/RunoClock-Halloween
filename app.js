@@ -10,8 +10,10 @@
   var KEYS = {
     runner: "hunt.runner", // { id, name }
     found: "hunt.found",   // { "<checkpoint number>": "<ISO time of first scan>" }
+    start: "hunt.start",   // ISO time the START sign was scanned
     queue: "hunt.queue"    // check-in rows not yet saved to Supabase
   };
+  var START_CHECKPOINT = 0; // stored in Supabase as checkpoint 0
 
   document.documentElement.setAttribute("data-theme", CFG.halloweenTheme ? "halloween" : "classic");
 
@@ -52,6 +54,13 @@
   function newRunnerId() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return "r-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  }
+
+  // Every element with data-since="<ms timestamp>" shows a live, ticking elapsed time.
+  function tickClocks() {
+    document.querySelectorAll("[data-since]").forEach(function (el) {
+      el.textContent = formatDuration(Date.now() - Number(el.getAttribute("data-since")));
+    });
   }
 
   function withTimeout(promise) {
@@ -120,19 +129,77 @@
       if (cp.code.toLowerCase() === code) index = i;
     });
 
+    var action = null;
+    if (CFG.startCode && code === CFG.startCode.toLowerCase()) {
+      action = startClock;
+    } else if (index !== -1) {
+      action = function () { checkIn(index + 1); };
+    }
+
     if (!code) {
       renderHome();
-    } else if (index === -1) {
+    } else if (!action) {
       renderUnknownCode();
     } else if (!load(KEYS.runner, null)) {
-      renderNameForm(function () { checkIn(index + 1); });
+      renderNameForm(action);
     } else {
-      checkIn(index + 1);
+      action();
     }
 
     flushQueue();
     setInterval(flushQueue, CFG.syncRetrySeconds * 1000);
+    setInterval(tickClocks, 1000);
     window.addEventListener("online", flushQueue);
+
+    function queueCheckIn(number, time) {
+      var runner = load(KEYS.runner, null);
+      var queue = load(KEYS.queue, []);
+      queue.push({
+        runner_id: runner.id,
+        runner_name: runner.name,
+        checkpoint: number,
+        // Sent explicitly so a check-in that syncs late still records when it was scanned.
+        created_at: time
+      });
+      save(KEYS.queue, queue);
+    }
+
+    // Clock starts at the START scan, or at the first checkpoint for runners who skipped it.
+    function startTime(found) {
+      var start = load(KEYS.start, null);
+      if (start) return Date.parse(start);
+      var times = Object.keys(found).map(function (k) { return Date.parse(found[k]); });
+      return times.length ? Math.min.apply(null, times) : null;
+    }
+
+    function clockHtml(found) {
+      var since = startTime(found);
+      if (since === null) return "";
+      return '<div class="card card-time"><h2>Running time</h2>' +
+        '<p class="big-time" data-since="' + since + '">' + formatDuration(Date.now() - since) + '</p></div>';
+    }
+
+    function startClock() {
+      var found = load(KEYS.found, {});
+      var alreadyRunning = startTime(found) !== null;
+      if (!alreadyRunning) {
+        var now = new Date().toISOString();
+        save(KEYS.start, now);
+        queueCheckIn(START_CHECKPOINT, now);
+        if (navigator.vibrate) navigator.vibrate(200);
+      }
+      if (Object.keys(found).length >= TOTAL) return renderFinish(found, false);
+      app.innerHTML =
+        '<section class="screen">' +
+          '<p class="kicker">' + (alreadyRunning ? "Your clock is already running!" : "Ready, set…") + '</p>' +
+          '<h1 class="big">GO, ' + escapeHtml(load(KEYS.runner).name) + '!</h1>' +
+          clockHtml(found) +
+          progressHtml(found) +
+          '<div class="card card-message"><p>' + escapeHtml(CFG.startMessage) + '</p></div>' +
+          syncLineHtml() +
+        '</section>';
+      renderSync();
+    }
 
     // ---- screens
 
@@ -162,7 +229,6 @@
     }
 
     function checkIn(number) {
-      var runner = load(KEYS.runner, null);
       var found = load(KEYS.found, {});
       var isNew = !found[number];
 
@@ -170,15 +236,7 @@
         var now = new Date().toISOString();
         found[number] = now;
         save(KEYS.found, found);
-        var queue = load(KEYS.queue, []);
-        queue.push({
-          runner_id: runner.id,
-          runner_name: runner.name,
-          checkpoint: number,
-          // Sent explicitly so a check-in that syncs late still records when it was scanned.
-          created_at: now
-        });
-        save(KEYS.queue, queue);
+        queueCheckIn(number, now);
       }
 
       if (Object.keys(found).length >= TOTAL) {
@@ -199,6 +257,7 @@
           '<p class="cp-name">' + escapeHtml(cp.name) + '</p>' +
           progressHtml(found) +
           '<p class="count">' + count + ' of ' + TOTAL + ' found</p>' +
+          clockHtml(found) +
           '<div class="card card-message"><h2>Checkpoint ' + number + ' says…</h2><p>' + escapeHtml(cp.message) + '</p></div>' +
           '<div class="card card-clue"><h2>Clue to the next one</h2><p>' + escapeHtml(cp.clue) + '</p></div>' +
           syncLineHtml() +
@@ -208,14 +267,14 @@
 
     function renderFinish(found, isNew) {
       var times = Object.keys(found).map(function (k) { return Date.parse(found[k]); });
-      var total = Math.max.apply(null, times) - Math.min.apply(null, times);
+      var total = Math.max.apply(null, times) - startTime(found);
       app.innerHTML =
         '<section class="screen finish">' +
           '<p class="kicker">' + (isNew ? "That's all of them!" : "You already finished!") + '</p>' +
           '<h1 class="big">You found all ' + TOTAL + '! 🏁</h1>' +
           progressHtml(found) +
-          '<div class="card card-time"><h2>Your time</h2><p class="finish-time">' + formatDuration(total) + '</p>' +
-            '<p class="small">First scan to last scan</p></div>' +
+          '<div class="card card-time"><h2>Your time</h2><p class="big-time">' + formatDuration(total) + '</p>' +
+            '<p class="small">' + (load(KEYS.start, null) ? "Start to last checkpoint" : "First scan to last scan") + '</p></div>' +
           '<a class="btn btn-primary" href="leaderboard.html">See the leaderboard</a>' +
           syncLineHtml() +
         '</section>';
@@ -234,6 +293,7 @@
           '<p>Scan the QR code at each mile marker with your phone camera to check in.</p>' +
           progressHtml(found) +
           '<p class="count">' + count + ' of ' + TOTAL + ' found</p>' +
+          clockHtml(found) +
           '<a class="btn btn-secondary" href="leaderboard.html">Leaderboard</a>' +
           syncLineHtml() +
         '</section>';
@@ -334,6 +394,7 @@
     // Send any of this phone's queued check-ins first so they show up right away.
     flushQueue().then(refresh);
     setInterval(function () { flushQueue().then(refresh); }, CFG.leaderboardRefreshSeconds * 1000);
+    setInterval(tickClocks, 1000);
 
     function fetchAll(client) {
       var PAGE = 1000;
@@ -371,10 +432,11 @@
       var byRunner = {};
       rows.forEach(function (r) {
         var t = Date.parse(r.created_at);
-        var e = byRunner[r.runner_id] || (byRunner[r.runner_id] = { id: r.runner_id, name: r.runner_name, cps: {}, first: t, last: t });
+        var e = byRunner[r.runner_id] || (byRunner[r.runner_id] = { id: r.runner_id, cps: {}, first: Infinity, last: -Infinity });
         e.name = r.runner_name;
+        e.first = Math.min(e.first, t); // includes the START scan, so the clock starts there
+        if (r.checkpoint === START_CHECKPOINT) return;
         e.cps[r.checkpoint] = true;
-        e.first = Math.min(e.first, t);
         e.last = Math.max(e.last, t);
       });
       return Object.keys(byRunner).map(function (id) {
@@ -386,7 +448,8 @@
       }).sort(function (a, b) {
         if (b.count !== a.count) return b.count - a.count;
         if (a.done) return a.elapsed - b.elapsed;
-        return a.last - b.last; // unfinished ties: whoever got there first
+        // Unfinished ties: whoever got there first (or started first, if no checkpoints yet).
+        return a.count ? a.last - b.last : a.first - b.first;
       });
     }
 
@@ -402,7 +465,9 @@
           '<span class="place">' + place + '</span>' +
           '<span class="who">' + escapeHtml(r.name) + (me && me.id === r.id ? ' <span class="you">you</span>' : "") + '</span>' +
           '<span class="found">' + r.count + '/' + TOTAL + '</span>' +
-          '<span class="time">' + (r.done ? formatDuration(r.elapsed) : "") + '</span>' +
+          (r.done
+            ? '<span class="time">' + formatDuration(r.elapsed) + '</span>'
+            : '<span class="time running" data-since="' + r.first + '">' + formatDuration(Date.now() - r.first) + '</span>') +
         '</li>';
       }).join("") + '</ol>';
     }
