@@ -12,8 +12,8 @@ window.HUNT_CONFIG = {
   // From Supabase: Project Settings > Data API (URL) and Project Settings > API Keys
   // (the "anon" / "publishable" key). Both are safe to publish — Row Level Security
   // only lets visitors insert and read check-ins.
-  supabaseUrl: "https://YOUR-PROJECT-REF.supabase.co",
-  supabaseAnonKey: "YOUR-ANON-KEY",
+  supabaseUrl: "https://smqsehkworgiolzjjldg.supabase.co",
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtcXNlaGt3b3JnaW9sempqbGRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NzEzNzgsImV4cCI6MjEwODQ0NzM3OH0.1hwz6LlU_2HdKXvkvEqMleaFt4Uo9YOipoOViXsjxZ0",
 
   // true = spooky orange-and-black look, false = bright classic look.
   halloweenTheme: true,
