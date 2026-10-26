@@ -3,7 +3,7 @@
 // =====================================================================
 window.HUNT_CONFIG = {
   // Shown at the top of every page and on the printed QR signs.
-  eventName: "Run Club Scavenger Hunt",
+  eventName: "RunO'Clock Scavenger Hunt",
 
   // Public URL of the site, ending in a slash. The printed QR codes point here,
   // so set this BEFORE printing. (GitHub Pages: https://<user>.github.io/<repo>/)
