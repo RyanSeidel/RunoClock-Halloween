@@ -60,7 +60,7 @@ window.HUNT_CONFIG = {
       code: "79yfex",
       name: "🧙 The Witch's Cauldron 🧹",
       message: "🦵 Legs feeling wobbly? That's just the curse. 🪄 Mini challenge: cackle like a witch for 3 seconds! 🦇",
-      clue: "🍄 Thank you, runner! But your princess is in another castle… 🏰 just up the road. 👑"
+      clue: "🍄 Thank you, runner! But your princess is in Bowser's Castle 🏰… just up the road! 👑"
     },
     {
       code: "jpt3wr",
