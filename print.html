@@ -68,7 +68,7 @@
 <body>
   <div class="toolbar">
     <p><button type="button" onclick="window.print()">Print all</button></p>
-    <p>One sign per page: START, the 5 checkpoints, and a leaderboard sign for the start/finish. Scan each code with your phone before printing to make sure it opens the right page.</p>
+    <p>One sign per page: START, the 5 checkpoints, FINISH, and a leaderboard sign for the start/finish. Scan each code with your phone before printing to make sure it opens the right page.</p>
     <p id="warning" class="warning" hidden></p>
   </div>
   <div id="sheets"></div>
@@ -132,6 +132,9 @@
           base + "index.html?cp=" + encodeURIComponent(cp.code)
         );
       });
+      if (CFG.finishCode) {
+        addSheet(CFG.eventName + " - FINISH", "Scan to stop your clock", base + "index.html?cp=" + encodeURIComponent(CFG.finishCode));
+      }
       addSheet(CFG.eventName + " - Leaderboard", "See who's in the lead", base + "leaderboard.html");
     })();
   </script>

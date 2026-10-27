@@ -11,9 +11,11 @@
     runner: "hunt.runner", // { id, name }
     found: "hunt.found",   // { "<checkpoint number>": "<ISO time of first scan>" }
     start: "hunt.start",   // ISO time the START sign was scanned
+    finish: "hunt.finish", // ISO time the FINISH sign was scanned
     queue: "hunt.queue"    // check-in rows not yet saved to Supabase
   };
-  var START_CHECKPOINT = 0; // stored in Supabase as checkpoint 0
+  var START_CHECKPOINT = 0;   // stored in Supabase as checkpoint 0
+  var FINISH_CHECKPOINT = 99; // stored in Supabase as checkpoint 99
 
   document.documentElement.setAttribute("data-theme", CFG.halloweenTheme ? "halloween" : "classic");
 
@@ -132,6 +134,8 @@
     var action = null;
     if (CFG.startCode && code === CFG.startCode.toLowerCase()) {
       action = startClock;
+    } else if (CFG.finishCode && code === CFG.finishCode.toLowerCase()) {
+      action = stopClock;
     } else if (index !== -1) {
       action = function () { checkIn(index + 1); };
     }
@@ -175,6 +179,11 @@
     function clockHtml(found) {
       var since = startTime(found);
       if (since === null) return "";
+      var finish = load(KEYS.finish, null);
+      if (finish) {
+        return '<div class="card card-time"><h2>Your time</h2>' +
+          '<p class="big-time">' + formatDuration(Date.parse(finish) - since) + '</p></div>';
+      }
       return '<div class="card card-time"><h2>Running time</h2>' +
         '<p class="big-time" data-since="' + since + '">' + formatDuration(Date.now() - since) + '</p></div>';
     }
@@ -188,7 +197,7 @@
         queueCheckIn(START_CHECKPOINT, now);
         if (navigator.vibrate) navigator.vibrate(200);
       }
-      if (Object.keys(found).length >= TOTAL) return renderFinish(found, false);
+      if (load(KEYS.finish, null)) return renderFinish(found, false);
       app.innerHTML =
         '<section class="screen">' +
           '<p class="kicker">' + (alreadyRunning ? "Your clock is already running!" : "Ready, set…") + '</p>' +
@@ -199,6 +208,19 @@
           syncLineHtml() +
         '</section>';
       renderSync();
+    }
+
+    // FINISH sign at the finish line: stops the clock. Only the first scan counts.
+    function stopClock() {
+      var found = load(KEYS.found, {});
+      var isNew = !load(KEYS.finish, null);
+      if (isNew) {
+        var now = new Date().toISOString();
+        save(KEYS.finish, now);
+        queueCheckIn(FINISH_CHECKPOINT, now);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      }
+      renderFinish(found, isNew);
     }
 
     // ---- screens
@@ -239,17 +261,22 @@
         queueCheckIn(number, now);
       }
 
-      if (Object.keys(found).length >= TOTAL) {
-        renderFinish(found, isNew);
-      } else {
-        renderFound(number, found, isNew);
-      }
+      renderFound(number, found, isNew);
       if (navigator.vibrate && isNew) navigator.vibrate(200);
     }
 
     function renderFound(number, found, isNew) {
+      // Lets style.css give each checkpoint its own colors ([data-cp="1"] etc.).
+      document.documentElement.setAttribute("data-cp", number);
       var cp = CFG.checkpoints[number - 1];
       var count = Object.keys(found).length;
+      var nextCard = '<div class="card card-clue"><h2>Clue to the next one</h2><p>' + escapeHtml(cp.clue) + '</p></div>';
+      if (count >= TOTAL && !load(KEYS.finish, null)) {
+        // The last checkpoint's clue points to the finish; if they found them out of order, say so plainly.
+        var toFinish = number === TOTAL ? cp.clue :
+          "All " + TOTAL + " found! Head to the finish line and scan the FINISH sign to stop your clock.";
+        nextCard = '<div class="card card-clue"><h2>Head for the finish! 🏁</h2><p>' + escapeHtml(toFinish) + '</p></div>';
+      }
       app.innerHTML =
         '<section class="screen">' +
           '<p class="kicker">' + (isNew ? "Nice one, " + escapeHtml(load(KEYS.runner).name) + "!" : "Already got this one!") + '</p>' +
@@ -259,22 +286,25 @@
           '<p class="count">' + count + ' of ' + TOTAL + ' found</p>' +
           clockHtml(found) +
           '<div class="card card-message"><h2>Checkpoint ' + number + ' says…</h2><p>' + escapeHtml(cp.message) + '</p></div>' +
-          '<div class="card card-clue"><h2>Clue to the next one</h2><p>' + escapeHtml(cp.clue) + '</p></div>' +
+          nextCard +
           syncLineHtml() +
         '</section>';
       renderSync();
     }
 
     function renderFinish(found, isNew) {
-      var times = Object.keys(found).map(function (k) { return Date.parse(found[k]); });
-      var total = Math.max.apply(null, times) - startTime(found);
+      var count = Object.keys(found).length;
+      var since = startTime(found);
+      var total = Date.parse(load(KEYS.finish)) - since;
       app.innerHTML =
         '<section class="screen finish">' +
-          '<p class="kicker">' + (isNew ? "That's all of them!" : "You already finished!") + '</p>' +
-          '<h1 class="big">You found all ' + TOTAL + '! 🏁</h1>' +
+          '<p class="kicker">' + (isNew ? "You crossed the finish line!" : "You already finished!") + '</p>' +
+          '<h1 class="big">' + (count >= TOTAL ? "You found all " + TOTAL + "! 🏁" : "Finished! 🏁") + '</h1>' +
           progressHtml(found) +
-          '<div class="card card-time"><h2>Your time</h2><p class="big-time">' + formatDuration(total) + '</p>' +
-            '<p class="small">' + (load(KEYS.start, null) ? "Start to last checkpoint" : "First scan to last scan") + '</p></div>' +
+          '<p class="count">' + count + ' of ' + TOTAL + ' found</p>' +
+          (since === null ? "" :
+            '<div class="card card-time"><h2>Your time</h2><p class="big-time">' + formatDuration(total) + '</p>' +
+            '<p class="small">' + (load(KEYS.start, null) ? "Start to finish" : "First checkpoint to finish") + '</p></div>') +
           '<a class="btn btn-primary" href="leaderboard.html">See the leaderboard</a>' +
           syncLineHtml() +
         '</section>';
@@ -285,11 +315,11 @@
       var runner = load(KEYS.runner, null);
       var found = load(KEYS.found, {});
       var count = Object.keys(found).length;
-      if (count >= TOTAL) return renderFinish(found, false);
+      if (load(KEYS.finish, null)) return renderFinish(found, false);
       app.innerHTML =
         '<section class="screen">' +
           '<p class="kicker">' + (runner ? "Hey " + escapeHtml(runner.name) + "!" : "Welcome, runner!") + '</p>' +
-          '<h1>Find all ' + TOTAL + ' checkpoints</h1>' +
+          '<h1>' + (count >= TOTAL ? "All found! Head to the finish 🏁" : "Find all " + TOTAL + " checkpoints") + '</h1>' +
           '<p>Scan the QR code at each mile marker with your phone camera to check in.</p>' +
           progressHtml(found) +
           '<p class="count">' + count + ' of ' + TOTAL + ' found</p>' +
@@ -432,8 +462,9 @@
       var byRunner = {};
       rows.forEach(function (r) {
         var t = Date.parse(r.created_at);
-        var e = byRunner[r.runner_id] || (byRunner[r.runner_id] = { id: r.runner_id, cps: {}, first: Infinity, last: -Infinity });
+        var e = byRunner[r.runner_id] || (byRunner[r.runner_id] = { id: r.runner_id, cps: {}, first: Infinity, last: -Infinity, finish: null });
         e.name = r.runner_name;
+        if (r.checkpoint === FINISH_CHECKPOINT) { e.finish = t; return; }
         e.first = Math.min(e.first, t); // includes the START scan, so the clock starts there
         if (r.checkpoint === START_CHECKPOINT) return;
         e.cps[r.checkpoint] = true;
@@ -442,11 +473,13 @@
       return Object.keys(byRunner).map(function (id) {
         var e = byRunner[id];
         e.count = Object.keys(e.cps).length;
-        e.elapsed = e.last - e.first;
-        e.done = e.count >= TOTAL;
+        e.done = e.finish !== null; // the clock stops at the FINISH scan
+        if (e.done && e.first === Infinity) e.first = e.finish; // only scanned FINISH
+        e.elapsed = e.done ? e.finish - e.first : 0;
         return e;
       }).sort(function (a, b) {
         if (b.count !== a.count) return b.count - a.count;
+        if (a.done !== b.done) return a.done ? -1 : 1;
         if (a.done) return a.elapsed - b.elapsed;
         // Unfinished ties: whoever got there first (or started first, if no checkpoints yet).
         return a.count ? a.last - b.last : a.first - b.first;
@@ -460,7 +493,7 @@
       }
       var medals = ["🥇", "🥈", "🥉"];
       list.innerHTML = '<ol class="board">' + runners.map(function (r, i) {
-        var place = r.done && i < 3 ? medals[i] : String(i + 1);
+        var place = r.done && r.count >= TOTAL && i < 3 ? medals[i] : String(i + 1);
         return '<li class="row' + (r.done ? " done" : "") + (me && me.id === r.id ? " me" : "") + '">' +
           '<span class="place">' + place + '</span>' +
           '<span class="who">' + escapeHtml(r.name) + (me && me.id === r.id ? ' <span class="you">you</span>' : "") + '</span>' +

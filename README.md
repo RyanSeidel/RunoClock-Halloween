@@ -15,8 +15,8 @@ A phone-friendly QR scavenger hunt for a 2-mile route with 5 checkpoints and a s
 - Each QR code opens `index.html?cp=<code>`. The codes are random 6-character strings, so runners can't guess the URLs.
 - On their first scan, a runner types their name once. The name and a random runner ID are saved on their phone.
 - Each scan records a check-in and shows "Checkpoint X of 5 found!", progress dots, that checkpoint's message, and a clue to the next one. Scanning the same checkpoint again doesn't count twice.
-- **Timing:** runners scan the START sign at the start line, which starts their clock. A live running clock shows on every checkpoint screen and stops when they find their 5th checkpoint. If someone skips the START sign, their clock starts at their first checkpoint.
-- After all 5 are found, the runner sees their total time and a link to the leaderboard. The leaderboard shows finished times, plus live ticking times for runners still out on the course.
+- **Timing:** runners scan the START sign at the start line, which starts their clock, and the FINISH sign at the finish line, which stops it. A live running clock shows on every checkpoint screen. If someone skips the START sign, their clock starts at their first checkpoint.
+- After all 5 are found, the runner is told to head to the finish. Scanning FINISH shows their total time and a link to the leaderboard. The leaderboard ranks by checkpoints found, then finishers by time, and shows live ticking times for runners still out on the course.
 - **Weak signal:** check-ins are saved on the phone first and then sent to Supabase. If a check-in can't be sent, it stays queued. The app retries on every page load, every 20 seconds, and whenever the phone comes back online. A status line shows "✓ Synced" or "will sync when online". The time of each check-in is the time it was scanned, even if it syncs later.
 
 ---
@@ -33,7 +33,7 @@ create table public.checkins (
   id          uuid primary key default gen_random_uuid(),
   runner_id   text not null check (char_length(runner_id) between 1 and 64),
   runner_name text not null check (char_length(runner_name) between 1 and 40),
-  checkpoint  int  not null check (checkpoint between 0 and 5),  -- 0 = START scan
+  checkpoint  int  not null check (checkpoint between 0 and 5 or checkpoint = 99),  -- 0 = START, 99 = FINISH
   created_at  timestamptz not null default now(),
   constraint checkins_runner_checkpoint_unique unique (runner_id, checkpoint)
 );
@@ -56,11 +56,11 @@ grant select, insert on public.checkins to anon;
 revoke update, delete, truncate on public.checkins from anon;
 ```
 
-   **Already created the table before the START sign existed?** Run this once to allow checkpoint 0:
+   **Already created the table before the START/FINISH signs existed?** Run this once to allow checkpoints 0 and 99:
 
    ```sql
    alter table public.checkins drop constraint if exists checkins_checkpoint_check;
-   alter table public.checkins add constraint checkins_checkpoint_check check (checkpoint between 0 and 5);
+   alter table public.checkins add constraint checkins_checkpoint_check check (checkpoint between 0 and 5 or checkpoint = 99);
    ```
 
 4. **Find your project URL:** open **Project Settings** (the gear icon at the bottom of the sidebar), then **Data API**. Copy the **Project URL**. It looks like `https://abcdefghijklmnop.supabase.co`.
@@ -109,7 +109,8 @@ Do this a few days before October 28.
 2. **Test on the live site with your phone:** open `print.html` on your computer and scan each QR code from the screen with your phone. Check that:
    - the first scan asks for your name, and later scans don't
    - rescanning a checkpoint shows "Already got this one!" and doesn't add to your count
-   - after all 5, the finish screen shows a time, and you appear on the leaderboard as complete
+   - after all 5, the screen says to head to the finish, and your clock keeps running
+   - scanning FINISH shows your time, and you appear on the leaderboard as complete
 3. **Test the weak-signal path** in a desktop browser. Open DevTools, go to **Network**, right-click any request, and choose **Block request domain** (or use the **Network request blocking** panel to block `*supabase.co*`). Then open a checkpoint URL. You should still see the success screen, with "1 check-in saved on this phone, will sync when online". Unblock the domain, and within about 20 seconds the status should change to "✓ Synced".
 4. **Test the tablet:** open `leaderboard.html` on the tablet you'll use at the start/finish and make sure it's readable from a few feet away.
 5. **Clear your test data:**
@@ -120,7 +121,7 @@ Do this a few days before October 28.
 
 1. Open `https://ryanseidel.github.io/RunoClock-Halloween/print.html` in a desktop browser. If you open it from localhost, the codes will point to `baseUrl` in config.js, which is fine, but double-check that it's your live URL.
 2. Scan each code on screen with your phone to confirm it opens the right checkpoint.
-3. Click **Print all**. Use Letter paper, portrait orientation, "Default" margins, and 100% scale (turn off "Fit to page"). You'll get 7 pages, each with a QR code about 4¾ inches wide: the START sign for the start line, the 5 checkpoints, and a leaderboard sign for the start/finish area.
+3. Click **Print all**. Use Letter paper, portrait orientation, "Default" margins, and 100% scale (turn off "Fit to page"). You'll get 8 pages, each with a QR code about 4¾ inches wide: the START sign for the start line, the 5 checkpoints, the FINISH sign for the finish line, and a leaderboard sign for the start/finish area.
 4. Weatherproof the signs if you can: use sheet protectors or laminate them. Avoid glossy plastic directly over the code in direct sun, because glare makes scanning harder. Mount them at chest height.
 
 ## Notes and limits

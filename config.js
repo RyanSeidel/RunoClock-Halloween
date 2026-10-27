@@ -22,7 +22,11 @@ window.HUNT_CONFIG = {
   // Scanning it starts the runner's clock. Runners who skip it start their clock
   // at their first checkpoint. Set to "" to drop the start sign entirely.
   startCode: "tjpg7u",
-  startMessage: "Your clock is running! Go find Checkpoint 1.",
+  // Code for the FINISH sign at the finish line (index.html?cp=<finishCode>).
+  // Scanning it stops the runner's clock; that's their time on the leaderboard.
+  finishCode: "w3nd8k",
+
+  startMessage: "⏱️ Your clock is running! Follow the chocolate river 🍫 and listen for a little orange worker with green hair. 🎶",
 
   // How often the leaderboard reloads, and how often unsent check-ins retry.
   leaderboardRefreshSeconds: 15,
@@ -36,33 +40,33 @@ window.HUNT_CONFIG = {
   checkpoints: [
     {
       code: "hzknft",
-      name: "The Warm-Up Haunt",
-      message: "You're off and running! Mini challenge: high-five the next runner you see.",
-      clue: "Next, look for something that tells time but never runs."
+      name: "🍫 Wonka's Factory Floor 🍭",
+      message: "🎶 Oompa loompa doompa-dee-doo, you found Checkpoint 1! 🎶 Mini challenge: Waddle like an Oompa Loompa for 10 steps! 🐧",
+      clue: "🧔 Next, find a 542-year-old leader in a red hat 🎅 with a long white beard. He's feeling a little blue. 💙"
     },
     {
       code: "a8urmn",
-      name: "Pumpkin Patch Post",
-      message: "Mini challenge: do your best zombie shuffle for 10 steps. Nobody's watching. Probably.",
-      clue: "Water flows beneath your feet at the next stop. Cross with care!"
+      name: "🍄 Smurf Village 💙",
+      message: "🍄 Welcome to the mushroom village! Mini challenge: say 'smurf' instead of one word in your next sentence. 💬",
+      clue: "🌊 Next, seek the Water Hashira, a quiet swordsman ⚔️ who doesn't say much. 🤐"
     },
     {
       code: "89u3p5",
-      name: "Haunted Halfway",
-      message: "Halfway there! Mini challenge: howl at the sky like a werewolf.",
-      clue: "Seek the tallest tree that guards the path ahead."
+      name: "🌊 The Water Hashira's Post ⚔️",
+      message: "🏃 Halfway there! Mini challenge: strike your best sword pose ⚔️. Total calm. No smiling. 😐",
+      clue: "🔮 Double, double, toil and trouble. Next, find the one stirring the cauldron. 🧙"
     },
     {
       code: "79yfex",
-      name: "Witch's Bend",
-      message: "Legs feeling wobbly? That's just the curse. Mini challenge: 5 jumping jacks!",
-      clue: "The final checkpoint waits where the path turns for home."
+      name: "🧙 The Witch's Cauldron 🧹",
+      message: "🦵 Legs feeling wobbly? That's just the curse. 🪄 Mini challenge: cackle like a witch for 3 seconds! 🦇",
+      clue: "🍄 Thank you, runner! But your princess is in another castle… 🏰 just up the road. 👑"
     },
     {
       code: "jpt3wr",
-      name: "The Final Fright",
-      message: "Last one! Sprint it in, you magnificent ghoul.",
-      clue: "Head back to the start/finish and check the leaderboard!"
+      name: "👑 Peach's Castle 🏰",
+      message: "⭐ Last one! Mini challenge: do a Mario jump and yell 'Wahoo!' as you sprint in. 🍄",
+      clue: "🎉 You saved the princess! Now sprint to the finish line 🏁 and scan the FINISH sign to stop your clock! ⏱️"
     }
   ]
 };

@@ -251,6 +251,112 @@ p { margin: 0 0 1em; }
   .leaderboard .btn { max-width: 24rem; margin: 1.5rem auto; }
 }
 
+/* ---------- per-checkpoint themes
+   Shown on the "Checkpoint N found!" screen. Any variable left out
+   falls back to the main theme above. */
+
+/* 1: Oompa Loompa: chocolate brown, orange skin, green hair */
+:root[data-cp="1"] {
+  --bg: #2b1608;
+  --fg: #ffffff;
+  --muted: #ffe2c4;
+  --card: #3d2210;
+  --primary: #ff8c1a;
+  --primary-fg: #000000;
+  --secondary: #7dff5a;
+  --secondary-fg: #000000;
+  --accent: #7dff5a;
+  --ok: #7dff5a;
+  --warn: #ffc94d;
+  --border: #ff8c1a;
+  --topbar-bg: #ff8c1a;
+  --topbar-fg: #000000;
+}
+
+/* 2: Papa Smurf: smurf blue, red hat, white beard */
+:root[data-cp="2"] {
+  --bg: #0a1f4d;
+  --fg: #ffffff;
+  --muted: #d6e4ff;
+  --card: #123070;
+  --primary: #e10600;
+  --primary-fg: #ffffff;
+  --secondary: #ffffff;
+  --secondary-fg: #0a1f4d;
+  --accent: #ff6b6b;
+  --ok: #9dff3a;
+  --warn: #ffc94d;
+  --border: #ffffff;
+  --topbar-bg: #e10600;
+  --topbar-fg: #ffffff;
+}
+
+/* 3: Giyu: deep water blue, maroon haori */
+:root[data-cp="3"] {
+  --bg: #04202b;
+  --fg: #ffffff;
+  --muted: #cdeffb;
+  --card: #0b3a4a;
+  --primary: #4fd2ff;
+  --primary-fg: #000000;
+  --secondary: #a3242a;
+  --secondary-fg: #ffffff;
+  --accent: #4fd2ff;
+  --ok: #9dff3a;
+  --warn: #ffc94d;
+  --border: #4fd2ff;
+  --topbar-bg: #a3242a;
+  --topbar-fg: #ffffff;
+}
+
+/* 4: Witch: midnight purple, potion green */
+:root[data-cp="4"] {
+  --bg: #14001f;
+  --fg: #ffffff;
+  --muted: #ead6ff;
+  --card: #2a0b3d;
+  --primary: #9dff3a;
+  --primary-fg: #000000;
+  --secondary: #c77dff;
+  --secondary-fg: #000000;
+  --accent: #c77dff;
+  --ok: #9dff3a;
+  --warn: #ffc94d;
+  --border: #c77dff;
+  --topbar-bg: #6a1b9a;
+  --topbar-fg: #ffffff;
+}
+
+/* 5: Princess Peach: pink castle, gold crown */
+:root[data-cp="5"] {
+  --bg: #ffe4f0;
+  --fg: #3a0024;
+  --muted: #6b2c4f;
+  --card: #ffffff;
+  --primary: #ffd400;
+  --primary-fg: #000000;
+  --secondary: #d4006f;
+  --secondary-fg: #ffffff;
+  --accent: #d4006f;
+  --ok: #007a33;
+  --warn: #9a4b00;
+  --border: #e0408a;
+  --topbar-bg: #ff5fa2;
+  --topbar-fg: #3a0024;
+}
+
+/* Swap the topbar's pumpkin/ghost for each character's emoji. */
+:root[data-cp="1"] .topbar::before { content: "🍫 "; }
+:root[data-cp="1"] .topbar::after  { content: " 🍫"; }
+:root[data-cp="2"] .topbar::before { content: "🍄 "; }
+:root[data-cp="2"] .topbar::after  { content: " 🍄"; }
+:root[data-cp="3"] .topbar::before { content: "🌊 "; }
+:root[data-cp="3"] .topbar::after  { content: " ⚔️"; }
+:root[data-cp="4"] .topbar::before { content: "🧙 "; }
+:root[data-cp="4"] .topbar::after  { content: " 🧹"; }
+:root[data-cp="5"] .topbar::before { content: "👑 "; }
+:root[data-cp="5"] .topbar::after  { content: " 🍑"; }
+
 @media (prefers-reduced-motion: reduce) {
   .dot.on { animation: none; }
 }
